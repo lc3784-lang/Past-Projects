@@ -6,7 +6,7 @@ title: "SOL_Analysis_Diet_Exercise"
 output:
   pdf_document: default
   html_document: default
-date: "2026-07-18"
+date: "2026-10-14"
 ---
 
 ```{r setup, include=FALSE}
@@ -58,6 +58,7 @@ tinytex::tlmgr_repo("https://ctan.org")
 SOL_Dataset <- read.csv("SOL_Dataset.csv") %>% 
   mutate(PID = as.factor(PID))
 
+#clean data prior to analyses
 Final_Data_with_weights_4 <- SOL_Dataset %>% 
    mutate(Tobacco_Use = if_else(TBEA3 == "S", "3", TBEA3)) %>% 
   mutate(Tobacco_Use_1 = case_when(Tobacco_Use == 1 ~ "Daily",
@@ -69,10 +70,10 @@ Final_Data_with_weights_4 <- SOL_Dataset %>%
   mutate(Tobacco_Use_T2 = as.factor(Tobacco_Use_T2)) %>% 
   mutate(Average_sleep_Real = as.factor(Average_sleep_Real)) %>% 
    mutate(Average_sleep_Real_2 = as.factor(Average_sleep_Real2)) %>% 
-   mutate(Average_sleep_Real_2 = factor(Average_sleep_Real2, levels = c("2", "1", "3"))) %>% 
+   mutate(Average_sleep_Real_2 = factor(Average_sleep_Real2, levels = c("2", "1", "3"))) %>% #change reference group
   mutate(GPAQ_PAG2008 = as.factor(GPAQ_PAG2008)) %>% 
-  mutate(GPAQ_PAG20082 = factor(GPAQ_PAG2008, levels = c("2", "1", "3", "4"))) %>% 
-    mutate(GPAQ_PAG20083 = factor(GPAQ_PAG2008, levels = c("3", "1", "2", "4"))) %>% 
+  mutate(GPAQ_PAG20082 = factor(GPAQ_PAG2008, levels = c("2", "1", "3", "4"))) %>%  # change reference group
+mutate(GPAQ_PAG20083 = factor(GPAQ_PAG2008, levels = c("3", "1", "2", "4"))) %>% #change reference group
     mutate(GPAQ_PAG20084 = factor(GPAQ_PAG2008, levels = c("4", "1", "2", "3"))) %>% 
   mutate(Receipt_of_Prenatal_Care = as.factor(Receipt_of_Prenatal_Care)) %>% 
   rename(Hypertension_Visit_1 = MHEA1_H) %>% 
@@ -86,6 +87,7 @@ Physical_Activity <- read.csv("pa_derv_lad1.csv") %>%
   select(PID, PAG2008, PAG2008YN, ADHERENTYN, MV_WEEK) %>% 
   mutate(PID = as.factor(PID))
 
+#Join Datasets
 Final_Data_with_weights_4 <- Physical_Activity %>% 
   right_join(Final_Data_with_weights_4, by = c("PID" = "PID"), relationship = "many-to-many") %>% 
   mutate(PAG2008YN = if_else(PAG2008YN == 0, "0", "1")) %>% 
@@ -108,6 +110,8 @@ Final_Data_with_weights_4 <- Final_Data_with_weights_4 %>%
 ```
 
 ```{r}
+#prepare descriptives
+
 Final_Data_with_weights_4 %>%
   select(AGE, AGE_V2, income, BMI, Tobacco_Use_T2, Num_preg_prior_V1, 
          Depression_Baseline, Receipt_of_Prenatal_Care, PCE4_Delivery_Type, PCE4, PCE2A_WEEKS, PCE7C_G, 
@@ -323,7 +327,7 @@ vars <- c("Birth_Complications_Cat","Average_sleep_Real_num_hours",
           "Receipt_of_Prenatal_Care","income","AGE_diff")
 Final_Data_with_weights_no_Missing_sleep <- Final_Data_with_weights_4[complete.cases(
   Final_Data_with_weights_4[vars]
-), ]
+), ] 
 
 Aim1.1.1 <- geeglm(Birth_Complications_Cat~ Average_sleep_Real_num_hours + AGE + BMI + Num_preg_prior_V1 + Tobacco_Use_T2 + Receipt_of_Prenatal_Care + income + AGE_diff, data=Final_Data_with_weights_no_Missing_sleep, family = binomial(link = "logit"), id = PID, corstr = "exchangeable")
 SummaryAim1.1.1 <-tidy(Aim1.1.1)
@@ -513,7 +517,7 @@ saveWorkbook(wb,"/Users/lijeannecheam/Desktop/Aim2_Sleep.xlsx", overwrite = TRUE
 ```
 
 ```{r}
-#Longitudinal Association between depression at visit 1 and birth complications
+#Aim 2.1.1: Longitudinal Association between depression at visit 1 and birth complications
 
 wb <- createWorkbook()
 addWorksheet(wb,"Aim2")
@@ -533,7 +537,7 @@ kable(SummaryAim2.1.1)
 writeFormula(wb, "Aim2", "m2.1.1 Birth Complications", xy = c(1,3))
 writeData(wb,"Aim2", SummaryAim2.1.1, rowNames=TRUE, colNames=TRUE, xy = c(1,4), borders = openxlsx_getOp("borders", "all"), borderColour = openxlsx_getOp("borderColour", "black"), borderStyle = openxlsx_getOp("borderStyle", "medium"))
 
-#Longitudinal Association between depression at visit 1 and delivery type
+#Aim 2.1.2 Longitudinal Association between depression at visit 1 and delivery type
 vars <- c("PCE4_Delivery_Type", "Depression_Baseline",
           "AGE","BMI","Num_preg_prior_V1","Tobacco_Use_T2",
           "Receipt_of_Prenatal_Care","income","AGE_diff")
@@ -548,7 +552,7 @@ summary(Aim_2.1.2)
 writeFormula(wb, "Aim2", "m2.1.2 Delivery Type", xy = c(10,3))
 writeData(wb,"Aim2", SummaryAim2.1.2, rowNames=TRUE, colNames=TRUE, xy = c(10,4), borders = openxlsx_getOp("borders", "all"), borderColour = openxlsx_getOp("borderColour", "black"), borderStyle = openxlsx_getOp("borderStyle", "medium"))
 
-#Longitudinal Association between depression at visit 1 and Gestational age
+#Aim 2.1.3 Longitudinal Association between depression at visit 1 and Gestational age
 
 vars <- c("PCE7C_G", "Depression_Baseline",
           "AGE","BMI","Num_preg_prior_V1","Tobacco_Use_T2",
@@ -564,7 +568,7 @@ SummaryAim2.1.3 <-tidy(Aim_2.1.3)
 writeFormula(wb, "Aim2", "m2.1.3 Birth Weight", xy = c(20,3))
 writeData(wb,"Aim2", SummaryAim2.1.3, rowNames=TRUE, colNames=TRUE, xy = c(20,4), borders = openxlsx_getOp("borders", "all"), borderColour = openxlsx_getOp("borderColour", "black"), borderStyle = openxlsx_getOp("borderStyle", "medium"))
 
-#Longitudinal Association between depression at visit 1 and birth weight
+#Aim 2.1.4 Longitudinal Association between depression at visit 1 and birth weight
 
 vars <- c("PCE2A_WEEKS", "Depression_Baseline",
           "AGE","BMI","Num_preg_prior_V1","Tobacco_Use_T2",
@@ -580,11 +584,11 @@ SummaryAim2.1.4 <-tidy(Aim_2.1.4)
 writeFormula(wb, "Aim2", "m2.1.4 Gestational Age", xy = c(30,3))
 writeData(wb,"Aim2", SummaryAim2.1.4, rowNames=TRUE, colNames=TRUE, xy = c(30,4), borders = openxlsx_getOp("borders", "all"), borderColour = openxlsx_getOp("borderColour", "black"), borderStyle = openxlsx_getOp("borderStyle", "medium"))
 
-saveWorkbook(wb,"/Users/lijeannecheam/Desktop/Aim2_Depression.xlsx", overwrite = TRUE)
+saveWorkbook(wb,"/Users/lijeannecheam/Desktop/Aim2_Depression.xlsx", overwrite = TRUE) # import findings to excel sheet
 ```
 
 ```{r}
-##Aim3.1.1: Longitudinal Association between Diet (AHEI) on birth complications
+##Aim 2.2.1: Longitudinal Association between Diet (AHEI) on birth complications
 
 vars <- c("Birth_Complications_Cat","AHEI2010",
           "AGE","BMI","Num_preg_prior_V1","Tobacco_Use_T2",
@@ -593,12 +597,12 @@ Final_Data_with_weights_no_Missing_AHEI <- Final_Data_with_weights_4[complete.ca
   Final_Data_with_weights_4[vars]
 ), ]
 
-Aim3.1.1 <- glmgee (Birth_Complications_Cat~ AHEI2010 + AGE + BMI + Num_preg_prior_V1 + Tobacco_Use_T2 + Receipt_of_Prenatal_Care + income + AGE_diff, data=Final_Data_with_weights_no_Missing_AHEI, family = binomial(link = "logit"), id = PID, corstr = "exchangeable")
-summary(Aim3.1.1)
-SummaryAim3.1.1 <-tidy(Aim3.1.1)
-kable(SummaryAim3.1.1)
+Aim2.2.1 <- glmgee (Birth_Complications_Cat~ AHEI2010 + AGE + BMI + Num_preg_prior_V1 + Tobacco_Use_T2 + Receipt_of_Prenatal_Care + income + AGE_diff, data=Final_Data_with_weights_no_Missing_AHEI, family = binomial(link = "logit"), id = PID, corstr = "exchangeable")
+summary(Aim2.2.1)
+SummaryAim2.2.1 <-tidy(Aim2.2.1)
+kable(SummaryAim2.2.1)
 
-##Aim3.1.2: Longitudinal Association between Diet (AHEI) on delivery type
+##Aim2.2.2: Longitudinal Association between Diet (AHEI) on delivery type
 
 vars <- c("PCE4_Delivery_Type","AHEI2010",
           "AGE","BMI","Num_preg_prior_V1","Tobacco_Use_T2",
@@ -607,13 +611,13 @@ Final_Data_with_weights_no_Missing_sleep_PCE4_AHEI <- Final_Data_with_weights_4[
   Final_Data_with_weights_4[vars]
 ), ]
 
-Aim3.1.2 <- glmgee (PCE4_Delivery_Type ~ AHEI2010 + AGE + BMI + Num_preg_prior_V1 + Tobacco_Use_T2 + Receipt_of_Prenatal_Care + income + AGE_diff, data = Final_Data_with_weights_no_Missing_sleep_PCE4_AHEI, family = binomial(link = "logit"), id = PID, corstr = "exchangeable")
-SummaryAim3.1.2 <- tidy(Aim3.1.2)
-kable(SummaryAim3.1.2)
-summary(Aim3.1.2)
+Aim2.2.2 <- glmgee (PCE4_Delivery_Type ~ AHEI2010 + AGE + BMI + Num_preg_prior_V1 + Tobacco_Use_T2 + Receipt_of_Prenatal_Care + income + AGE_diff, data = Final_Data_with_weights_no_Missing_sleep_PCE4_AHEI, family = binomial(link = "logit"), id = PID, corstr = "exchangeable")
+SummaryAim2.2.2 <- tidy(Aim2.2.2)
+kable(SummaryAim2.2.2)
+summary(Aim2.2.2)
 
 
-##Aim3.1.3: Longitudinal Association between Diet (AHEI) on infant's Birth weight
+##Aim2.2.3: Longitudinal Association between Diet (AHEI) on infant's Birth weight
 
 vars <- c("PCE7C_G","AHEI2010",
           "AGE","BMI","Num_preg_prior_V1","Tobacco_Use_T2",
@@ -622,10 +626,10 @@ Final_Data_with_weights_no_Missing_PCE7G_AHEI <- Final_Data_with_weights_4[compl
   Final_Data_with_weights_4[vars]
 ), ]
 
-m3.1.3 = glmgee (PCE7C_G ~ AHEI2010 + AGE + BMI + Num_preg_prior_V1 + Tobacco_Use_T2 + Receipt_of_Prenatal_Care + income + AGE_diff, data = Final_Data_with_weights_no_Missing_PCE7G_AHEI, id = PID, family = gaussian(link = "identity"), corstr = "exchangeable")
-summary(m3.1.3)
+m2.2.3 = glmgee (PCE7C_G ~ AHEI2010 + AGE + BMI + Num_preg_prior_V1 + Tobacco_Use_T2 + Receipt_of_Prenatal_Care + income + AGE_diff, data = Final_Data_with_weights_no_Missing_PCE7G_AHEI, id = PID, family = gaussian(link = "identity"), corstr = "exchangeable")
+summary(m2.2.3)
 
-##Aim3.1.4: Longitudinal Association between Diet (AHEI) on gestational age
+##Aim2.2.4: Longitudinal Association between Diet (AHEI) on gestational age
 
 vars <- c("PCE2A_WEEKS","AHEI2010",
           "AGE","BMI","Num_preg_prior_V1","Tobacco_Use_T2",
@@ -634,12 +638,12 @@ Final_Data_with_weights_no_Missing_Ges_Age_AHEI <- Final_Data_with_weights_4[com
   Final_Data_with_weights_4[vars]
 ), ]
 
-m3.1.4 = glmgee (PCE2A_WEEKS ~ AHEI2010 + AGE + BMI + Num_preg_prior_V1 + Tobacco_Use_T2 + Receipt_of_Prenatal_Care + income + AGE_diff, data = Final_Data_with_weights_no_Missing_Ges_Age_AHEI, id = PID, family = gaussian(link = "identity"), corstr = "exchangeable")
+m2.2.4 = glmgee (PCE2A_WEEKS ~ AHEI2010 + AGE + BMI + Num_preg_prior_V1 + Tobacco_Use_T2 + Receipt_of_Prenatal_Care + income + AGE_diff, data = Final_Data_with_weights_no_Missing_Ges_Age_AHEI, id = PID, family = gaussian(link = "identity"), corstr = "exchangeable")
 summary(m3.1.4)
 ```
 
 ```{r}
-##Aim4.1.1: Longitudinal Association between Physical Activity (GPAQ_PAG2008) on birth complications
+##Aim2.3.1: Longitudinal Association between Physical Activity (GPAQ_PAG2008) on birth complications
 
 wb <- createWorkbook()
 addWorksheet(wb,"Aim4")
